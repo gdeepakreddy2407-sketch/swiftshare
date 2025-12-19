@@ -8,20 +8,28 @@ const fs = require('fs');
 
 const app = express();
 
-// Try to use HTTPS if certificates exist, fallback to HTTP
+// Use HTTP in production (Render handles SSL), HTTPS locally if certs exist
 let server;
 let protocol = 'http';
-try {
-  const options = {
-    key: fs.readFileSync(path.join(__dirname, 'server.key')),
-    cert: fs.readFileSync(path.join(__dirname, 'server.cert'))
-  };
-  server = https.createServer(options, app);
-  protocol = 'https';
-  console.log('✅ HTTPS enabled - Encrypted signaling connection');
-} catch (err) {
+
+// Only use HTTPS locally if certificates exist (for development)
+if (process.env.NODE_ENV !== 'production' && !process.env.RENDER) {
+  try {
+    const options = {
+      key: fs.readFileSync(path.join(__dirname, 'server.key')),
+      cert: fs.readFileSync(path.join(__dirname, 'server.cert'))
+    };
+    server = https.createServer(options, app);
+    protocol = 'https';
+    console.log('✅ HTTPS enabled - Encrypted signaling connection');
+  } catch (err) {
+    server = http.createServer(app);
+    console.log('⚠️  Using HTTP - Platform will handle HTTPS');
+  }
+} else {
+  // Production: Use HTTP, let Render/platform handle SSL
   server = http.createServer(app);
-  console.log('⚠️  Using HTTP - Run setup for HTTPS encryption');
+  console.log('✅ HTTP server - Platform handles HTTPS');
 }
 
 const io = socketIO(server, {
@@ -119,20 +127,27 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
   const localIP = getLocalIP();
   console.log('\n🚀 P2P File Share Server Running!\n');
-  console.log(`Local:   ${protocol}://localhost:${PORT}`);
-  console.log(`Network: ${protocol}://${localIP}:${PORT}`);
+  
+  if (process.env.RENDER) {
+    console.log(`🌐 Production: https://${process.env.RENDER_EXTERNAL_HOSTNAME || 'your-app.onrender.com'}`);
+  } else {
+    console.log(`Local:   ${protocol}://localhost:${PORT}`);
+    console.log(`Network: ${protocol}://${localIP}:${PORT}`);
+  }
   
   console.log('\n🔒 SECURITY STATUS:');
-  console.log(`   Signaling: ${protocol === 'https' ? '✅ ENCRYPTED (HTTPS/WSS)' : '⚠️  UNENCRYPTED (HTTP/WS)'}`);
+  console.log(`   Signaling: ✅ ENCRYPTED (HTTPS/WSS via platform)`);
   console.log(`   File Transfer: ✅ ENCRYPTED (WebRTC DTLS)`);
   console.log(`   Connection: ✅ Peer-to-Peer (Files never touch server)`);
   
-  console.log('\n📱 To access from mobile:');
-  console.log(`   1. Make sure mobile is on same WiFi`);
-  console.log(`   2. Open: ${protocol}://${localIP}:${PORT}`);
-  if (protocol === 'https') {
-    console.log(`   3. Accept security warning (self-signed certificate)`);
+  if (!process.env.RENDER) {
+    console.log('\n📱 To access from mobile:');
+    console.log(`   1. Make sure mobile is on same WiFi`);
+    console.log(`   2. Open: ${protocol}://${localIP}:${PORT}`);
+    if (protocol === 'https') {
+      console.log(`   3. Accept security warning (self-signed certificate)`);
+    }
+    console.log('\n💡 If mobile can\'t connect, check firewall:');
+    console.log('   macOS: System Settings → Network → Firewall → Allow Node.js\n');
   }
-  console.log('\n💡 If mobile can\'t connect, check firewall:');
-  console.log('   macOS: System Settings → Network → Firewall → Allow Node.js\n');
 });

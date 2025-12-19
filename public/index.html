@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>P2P File Share - Fast & Secure</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="background-animation"></div>
+  
+  <div class="container">
+    <header>
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+        </svg>
+        <h1>SwiftShare</h1>
+      </div>
+      <p class="tagline">Transfer files instantly over WiFi</p>
+      <button id="security-info-btn" class="security-badge" title="Security Info">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0110 0v4"></path>
+        </svg>
+        <span>Encrypted</span>
+      </button>
+    </header>
+
+    <!-- Security Info Modal -->
+    <div id="security-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>🔒 Security Information</h2>
+          <button id="close-modal" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="security-item">
+            <div class="security-icon">✅</div>
+            <div>
+              <h3>End-to-End Encrypted Transfer</h3>
+              <p>Files are encrypted using WebRTC DTLS (same encryption as HTTPS). Your files travel directly between devices with military-grade AES encryption.</p>
+            </div>
+          </div>
+          <div class="security-item">
+            <div class="security-icon">✅</div>
+            <div>
+              <h3>Peer-to-Peer Connection</h3>
+              <p>Files transfer directly from sender to receiver. They never touch our servers or any intermediate storage.</p>
+            </div>
+          </div>
+          <div class="security-item">
+            <div class="security-icon">✅</div>
+            <div>
+              <h3>No Storage, No Tracking</h3>
+              <p>We don't store, log, or have access to your files. Once transferred, the connection is closed and no data remains.</p>
+            </div>
+          </div>
+          <div class="security-item">
+            <div class="security-icon">🔑</div>
+            <div>
+              <h3>Private Room Codes</h3>
+              <p>Each transfer uses a unique 6-digit code. Only devices with the correct code can connect.</p>
+            </div>
+          </div>
+          <div class="security-item">
+            <div class="security-icon">⚡</div>
+            <div>
+              <h3>Same WiFi = No Internet Required</h3>
+              <p>When on the same network, files transfer locally without using internet bandwidth. Faster and more private.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirm-modal" class="modal hidden">
+      <div class="modal-content confirm-modal">
+        <div class="modal-header">
+          <h2 id="confirm-title">Confirm Action</h2>
+        </div>
+        <div class="modal-body">
+          <p id="confirm-message"></p>
+        </div>
+        <div class="modal-footer">
+          <button id="confirm-cancel" class="btn btn-secondary">No, Continue</button>
+          <button id="confirm-ok" class="btn btn-danger">Yes, Cancel Transfer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="notification" class="notification hidden">
+      <div class="notification-content">
+        <div class="notification-icon" id="notification-icon"></div>
+        <p id="notification-message"></p>
+      </div>
+    </div>
+
+    <!-- QR Scanner Modal -->
+    <div id="qr-scanner-modal" class="modal hidden">
+      <div class="qr-scanner-container">
+        <div class="qr-scanner-header">
+          <h2>Scan QR Code</h2>
+          <button id="close-qr-scanner" class="close-btn">&times;</button>
+        </div>
+        <div id="qr-scanner-reader" class="qr-scanner-reader"></div>
+        <p class="qr-scanner-hint">Point your camera at the QR code</p>
+      </div>
+    </div>
+
+    <!-- Initial Mode Selection -->
+    <div id="mode-selection" class="mode-selection">
+      <div class="mode-card" id="send-mode">
+        <div class="mode-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+          </svg>
+        </div>
+        <h2>Send File</h2>
+        <p>Share files with another device</p>
+      </div>
+      
+      <div class="mode-card" id="receive-mode">
+        <div class="mode-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+          </svg>
+        </div>
+        <h2>Receive File</h2>
+        <p>Get files from another device</p>
+      </div>
+    </div>
+
+    <!-- Sender Interface -->
+    <div id="sender-interface" class="interface hidden">
+      <div class="card">
+        <div class="room-code-display" id="room-code-display">
+          <p class="label">Share this code with the receiver:</p>
+          <div class="code-box">
+            <span id="room-code" class="code">------</span>
+            <button id="copy-code" class="icon-btn" title="Copy code">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="qr-section">
+            <p class="label">Or scan this QR code:</p>
+            <div id="qrcode" class="qr-code"></div>
+          </div>
+        </div>
+
+        <div id="waiting-receiver" class="status-message">
+          <div class="spinner"></div>
+          <p>Waiting for receiver to join...</p>
+        </div>
+
+        <div id="connected-status" class="connected-status hidden">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"></path>
+          </svg>
+          <h3>Connected!</h3>
+          <p>Receiver is ready. Choose files to send.</p>
+        </div>
+
+        <div id="file-selection" class="hidden">
+          <div class="file-input-wrapper">
+            <input type="file" id="file-input" multiple>
+            <label for="file-input" class="file-input-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+              </svg>
+              <span>Choose Files</span>
+            </label>
+          </div>
+          
+          <div id="selected-files" class="file-list hidden"></div>
+          
+          <button id="send-btn" class="btn btn-primary hidden">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+            </svg>
+            Send Files
+          </button>
+        </div>
+
+        <div id="transfer-progress" class="hidden">
+          <div class="progress-info">
+            <p id="transfer-status">Sending...</p>
+            <p id="transfer-percentage">0%</p>
+          </div>
+          <div class="progress-bar">
+            <div id="progress-fill" class="progress-fill"></div>
+          </div>
+          <div class="transfer-stats">
+            <div class="stat">
+              <span class="stat-label">Speed:</span>
+              <span id="transfer-speed" class="stat-value">-- KB/s</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Time remaining:</span>
+              <span id="transfer-time" class="stat-value">--</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="transfer-complete" class="hidden success-message">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 11-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          <p>Transfer Complete!</p>
+          <button id="send-another-btn" class="btn btn-primary" style="margin-top: 20px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+            </svg>
+            Send Another File
+          </button>
+        </div>
+      </div>
+
+      <button id="sender-cancel" class="btn btn-danger hidden">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>
+        Cancel Transfer
+      </button>
+      <button id="sender-back" class="btn btn-secondary hidden">Start New Transfer</button>
+    </div>
+
+    <!-- Receiver Interface -->
+    <div id="receiver-interface" class="interface hidden">
+      <div class="card">
+        <div class="code-input-section">
+          <p class="label">Enter the code from sender:</p>
+          <input type="text" id="code-input" class="code-input" placeholder="Enter 6-digit code" maxlength="6">
+          <button id="join-btn" class="btn btn-primary">Join & Receive</button>
+          
+          <div class="divider">
+            <span>OR</span>
+          </div>
+          
+          <button id="scan-qr-btn" class="btn btn-secondary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <path d="M3 9h18M9 3v18"></path>
+            </svg>
+            Scan QR Code
+          </button>
+        </div>
+
+        <div id="receiving-status" class="hidden">
+          <div class="status-message">
+            <div class="spinner"></div>
+            <p id="receive-status-text">Connecting to sender...</p>
+          </div>
+        </div>
+
+        <div id="receiver-connected-status" class="connected-status hidden">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <h3>Connected!</h3>
+          <p>Waiting for sender to select files...</p>
+        </div>
+
+        <div id="receive-ready-status" class="ready-status hidden">
+          <div class="ready-icon">📥</div>
+          <p>Ready to receive files...</p>
+        </div>
+
+          <div id="receive-progress" class="hidden">
+            <div class="progress-info">
+              <p id="receive-file-name">Receiving file...</p>
+              <p id="receive-percentage">0%</p>
+            </div>
+            <div class="progress-bar">
+              <div id="receive-progress-fill" class="progress-fill"></div>
+            </div>
+            <div class="transfer-stats">
+              <div class="stat">
+                <span class="stat-label">Speed:</span>
+                <span id="receive-speed" class="stat-value">-- KB/s</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Time remaining:</span>
+                <span id="receive-time" class="stat-value">--</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="receive-complete" class="hidden success-message">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 11-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            <p>Files Received Successfully!</p>
+          </div>
+        </div>
+      </div>
+
+      <button id="receiver-cancel" class="btn btn-danger hidden">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>
+        Cancel Transfer
+      </button>
+      <button id="receiver-back" class="btn btn-secondary hidden">Start New Transfer</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

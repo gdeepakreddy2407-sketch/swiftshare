@@ -34,6 +34,12 @@ let heartbeatInterval = null;
 let reconnectionTimeout = null;
 let intentionalDisconnect = false; // Track user-initiated disconnects
 
+// File streaming support (Chrome/Edge only)
+let supportsFileSystemAccess = 'showSaveFilePicker' in window;
+let streamingWritable = null;
+let streamingFileHandle = null;
+let useStreaming = false;
+
 // Handle page visibility changes (mobile file picker)
 document.addEventListener('visibilitychange', () => {
   isPageVisible = !document.hidden;
@@ -681,6 +687,11 @@ function updateSendProgress(fileName, percentage, current, total, speed, timeRem
 function showReceiverInterface() {
   modeSelection.classList.add('hidden');
   receiverInterface.classList.remove('hidden');
+  
+  // Show browser capability notification
+  if (!supportsFileSystemAccess) {
+    showNotification('For files >500MB, use Chrome or Edge for direct-to-disk transfers. Firefox/Safari limited to ~3-4GB.', 'info');
+  }
 }
 
 // Join room
@@ -923,10 +934,22 @@ function setupReceiverDataChannel() {
         transferCancelled = true;
         isTransferring = false;
         
+        // Close streaming if active
+        if (streamingWritable) {
+          try {
+            await streamingWritable.close();
+          } catch (e) {
+            console.error('Error closing stream:', e);
+          }
+          streamingWritable = null;
+          streamingFileHandle = null;
+        }
+        
         // Clear partial file data from memory
         receivedChunks = [];
         receivingFile = null;
         receivedFiles = [];
+        useStreaming = false;
         
         // Force garbage collection hint
         if (window.gc) {
@@ -956,9 +979,44 @@ function setupReceiverDataChannel() {
           receivedFiles = [];
         }
         
+        // Determine if we should use streaming (Chrome/Edge only, file > 500MB)
+        const largeFile = message.size > 500 * 1024 * 1024; // 500MB threshold
+        useStreaming = supportsFileSystemAccess && largeFile;
+        
         // New file incoming
         receivingFile = message;
         receivingFile.startTime = Date.now();
+        receivingFile.receivedSize = 0; // Track for streaming mode
+        
+        // For streaming mode, ask user to save file location upfront
+        if (useStreaming) {
+          try {
+            console.log('Large file detected - using streaming to disk mode');
+            streamingFileHandle = await window.showSaveFilePicker({
+              suggestedName: message.name,
+              types: [{
+                description: 'File',
+                accept: { '*/*': [] }
+              }]
+            });
+            streamingWritable = await streamingFileHandle.createWritable();
+            console.log('Streaming writable created successfully');
+            showNotification(`Streaming large file directly to disk (Chrome optimization)`, 'info');
+          } catch (err) {
+            console.error('Failed to create streaming writable:', err);
+            // Fallback to in-memory mode
+            useStreaming = false;
+            streamingWritable = null;
+            streamingFileHandle = null;
+            
+            if (err.name === 'AbortError') {
+              showNotification('File save cancelled. Transfer aborted.', 'warning');
+              transferCancelled = true;
+              return;
+            }
+          }
+        }
+        
         document.getElementById('receive-ready-status').classList.add('hidden');
         document.getElementById('receive-progress').classList.remove('hidden');
         document.getElementById('receiver-back').classList.add('hidden');
@@ -966,16 +1024,66 @@ function setupReceiverDataChannel() {
         updateReceiveProgress(message.name, 0);
       } else if (message.type === 'end') {
         // File complete
-        const blob = new Blob(receivedChunks, { type: receivingFile.fileType });
-        receivedFiles.push({
-          name: receivingFile.name,
-          blob: blob,
-          size: receivingFile.size
-        });
+        const fileName = receivingFile.name;
+        const fileSize = receivingFile.size;
+        const currentFile = receivingFile.currentFile;
+        const totalFiles = receivingFile.totalFiles;
         
-        // Check if all files received
-        if (receivingFile.currentFile === receivingFile.totalFiles) {
-          showReceivedFiles(receivedFiles);
+        if (useStreaming && streamingWritable) {
+          // Close the streaming file
+          try {
+            await streamingWritable.close();
+            console.log('Streaming file saved successfully');
+            streamingWritable = null;
+            streamingFileHandle = null;
+            useStreaming = false;
+            
+            // File already saved to disk - just show completion
+            receivingFile = null;
+            
+            if (currentFile === totalFiles) {
+              document.getElementById('receive-progress').classList.add('hidden');
+              document.getElementById('receive-complete').classList.remove('hidden');
+              document.getElementById('receiver-cancel').classList.add('hidden');
+              document.getElementById('receiver-back').classList.remove('hidden');
+              showNotification('File saved successfully!', 'success');
+            }
+          } catch (err) {
+            console.error('Error closing streaming file:', err);
+            showNotification('Error saving file. Please try again.', 'error');
+          }
+        } else {
+          // In-memory mode - create blob and IMMEDIATELY clear chunks to free memory
+          const blob = new Blob(receivedChunks, { type: receivingFile.fileType });
+          
+          // CRITICAL: Clear chunks array immediately after blob creation
+          // This prevents doubling memory usage (chunks + blob)
+          receivedChunks = [];
+          receivingFile = null;
+          
+          // Hint to browser to free memory
+          if (window.gc) {
+            window.gc();
+          }
+          
+          receivedFiles.push({
+            name: fileName,
+            blob: blob,
+            size: fileSize
+          });
+          
+          // Check if all files received
+          if (currentFile === totalFiles) {
+            showReceivedFiles(receivedFiles);
+            
+            // Clear receivedFiles array after download starts to free references
+            setTimeout(() => {
+              receivedFiles = [];
+              if (window.gc) {
+                window.gc();
+              }
+            }, 1000);
+          }
         }
       }
     } else {
@@ -985,35 +1093,76 @@ function setupReceiverDataChannel() {
         // Immediately clear chunk to free memory
         receivedChunks = [];
         receivingFile = null;
+        if (streamingWritable) {
+          try {
+            await streamingWritable.close();
+          } catch (e) {}
+          streamingWritable = null;
+        }
         return;
       }
       
-      receivedChunks.push(event.data);
-      const receivedSize = receivedChunks.reduce((acc, chunk) => acc + chunk.byteLength, 0);
-      const progress = (receivedSize / receivingFile.size) * 100;
-      const now = Date.now();
-      const elapsedTime = (now - receivingFile.startTime) / 1000;
-      
-      // Update UI more frequently - every 50ms instead of 100ms
-      const shouldUpdate = (now - lastProgressUpdate >= 50) || (receivedChunks.length === 1) || (progress >= 99);
-      
-      if (!shouldUpdate) {
-        return; // Skip this update
+      if (useStreaming && streamingWritable) {
+        // Streaming mode - write directly to disk
+        try {
+          await streamingWritable.write(event.data);
+          receivingFile.receivedSize += event.data.byteLength;
+          
+          const progress = (receivingFile.receivedSize / receivingFile.size) * 100;
+          const now = Date.now();
+          const elapsedTime = (now - receivingFile.startTime) / 1000;
+          
+          // Update UI
+          const shouldUpdate = (now - lastProgressUpdate >= 50) || (progress >= 99);
+          
+          if (shouldUpdate) {
+            lastProgressUpdate = now;
+            
+            let speed = 0;
+            let timeRemaining = 0;
+            
+            if (elapsedTime > 0.2) {
+              speed = receivingFile.receivedSize / elapsedTime;
+              const remainingBytes = receivingFile.size - receivingFile.receivedSize;
+              timeRemaining = speed > 0 ? remainingBytes / speed : 0;
+            }
+            
+            updateReceiveProgress(receivingFile.name, Math.min(progress, 100), speed, timeRemaining);
+          }
+        } catch (err) {
+          console.error('Error writing chunk to disk:', err);
+          showNotification('Error writing to disk. Transfer failed.', 'error');
+          transferCancelled = true;
+        }
+      } else {
+        // In-memory mode - store chunks in RAM
+        receivedChunks.push(event.data);
+        const receivedSize = receivedChunks.reduce((acc, chunk) => acc + chunk.byteLength, 0);
+        const progress = (receivedSize / receivingFile.size) * 100;
+        const now = Date.now();
+        const elapsedTime = (now - receivingFile.startTime) / 1000;
+        
+        // Update UI more frequently - every 50ms instead of 100ms
+        const shouldUpdate = (now - lastProgressUpdate >= 50) || (receivedChunks.length === 1) || (progress >= 99);
+        
+        if (!shouldUpdate) {
+          return; // Skip this update
+        }
+        
+        lastProgressUpdate = now;
+        
+        // Calculate speed and time
+        let speed = 0;
+        let timeRemaining = 0;
+        
+        if (elapsedTime > 0.2) { // Calculate speed after 0.2 seconds
+          speed = receivedSize / elapsedTime;
+          const remainingBytes = receivingFile.size - receivedSize;
+          timeRemaining = speed > 0 ? remainingBytes / speed : 0;
+        }
+        
+        updateReceiveProgress(receivingFile.name, Math.min(progress, 100), speed, timeRemaining);
       }
-      
-      lastProgressUpdate = now;
-      
-      // Calculate speed and time
-      let speed = 0;
-      let timeRemaining = 0;
-      
-      if (elapsedTime > 0.2) { // Calculate speed after 0.2 seconds
-        speed = receivedSize / elapsedTime;
-        const remainingBytes = receivingFile.size - receivedSize;
-        timeRemaining = speed > 0 ? remainingBytes / speed : 0;
-      }
-      
-      updateReceiveProgress(receivingFile.name, Math.min(progress, 100), speed, timeRemaining);
     }
   };
   
@@ -1042,7 +1191,7 @@ function showReceivedFiles(files) {
   document.getElementById('receiver-cancel').classList.add('hidden');
   document.getElementById('receiver-back').classList.remove('hidden');
   
-  // Auto-download all files
+  // Auto-download all files with proper memory cleanup
   files.forEach((file, index) => {
     setTimeout(() => {
       const url = URL.createObjectURL(file.blob);
@@ -1052,7 +1201,15 @@ function showReceivedFiles(files) {
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      
+      // Revoke URL after small delay (browser needs time to start download)
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+        // Hint to browser to free memory
+        if (window.gc) {
+          window.gc();
+        }
+      }, 200);
     }, index * 100); // Small delay between downloads to avoid browser blocking
   });
 }

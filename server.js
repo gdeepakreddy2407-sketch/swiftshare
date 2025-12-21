@@ -87,6 +87,11 @@ io.on('connection', (socket) => {
     socket.to(roomCode).emit('ice-candidate', candidate);
   });
 
+  // Forward local IP to peer
+  socket.on('local-ip', (roomCode, ip) => {
+    socket.to(roomCode).emit('local-ip', ip);
+  });
+
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
     

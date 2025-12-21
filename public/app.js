@@ -1189,3 +1189,33 @@ function showNotification(message, type = 'info') {
     notification.classList.add('hidden');
   }, 3000);
 }
+
+// Modal controls
+document.getElementById('security-info-btn').addEventListener('click', () => {
+  document.getElementById('security-modal').classList.remove('hidden');
+});
+
+document.getElementById('close-modal').addEventListener('click', () => {
+  document.getElementById('security-modal').classList.add('hidden');
+});
+
+document.getElementById('why-choose-btn').addEventListener('click', () => {
+  document.getElementById('why-choose-modal').classList.remove('hidden');
+});
+
+document.getElementById('close-why-modal').addEventListener('click', () => {
+  document.getElementById('why-choose-modal').classList.add('hidden');
+});
+
+// Close modals on background click
+document.getElementById('security-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'security-modal') {
+    document.getElementById('security-modal').classList.add('hidden');
+  }
+});
+
+document.getElementById('why-choose-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'why-choose-modal') {
+    document.getElementById('why-choose-modal').classList.add('hidden');
+  }
+});

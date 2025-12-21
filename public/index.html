@@ -3,72 +3,182 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>P2P File Share - Fast & Secure</title>
+  <title>Sroto Share - Fast & Secure File Transfer</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="background-animation"></div>
   
   <div class="container">
+    <button id="security-info-btn" class="info-icon" title="How it works & Security">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+      </svg>
+    </button>
+
     <header>
       <div class="logo">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
         </svg>
-        <h1>SwiftShare</h1>
+        <h1>Sroto Share</h1>
       </div>
-      <p class="tagline">Transfer files instantly over WiFi</p>
-      <button id="security-info-btn" class="security-badge" title="Security Info">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-          <path d="M7 11V7a5 5 0 0110 0v4"></path>
-        </svg>
-        <span>Encrypted</span>
-      </button>
+      <p class="tagline">Fast & Secure File Transfer</p>
     </header>
 
     <!-- Security Info Modal -->
     <div id="security-modal" class="modal hidden">
       <div class="modal-content">
         <div class="modal-header">
-          <h2>🔒 Security Information</h2>
+          <h2>How to Use Sroto Share</h2>
           <button id="close-modal" class="close-btn">&times;</button>
         </div>
         <div class="modal-body">
-          <div class="security-item">
-            <div class="security-icon">✅</div>
-            <div>
-              <h3>End-to-End Encrypted Transfer</h3>
-              <p>Files are encrypted using WebRTC DTLS (same encryption as HTTPS). Your files travel directly between devices with military-grade AES encryption.</p>
+          <!-- How to Send Files -->
+          <div class="modal-section">
+            <h3 class="section-title">📤 Sending Files (Step-by-Step)</h3>
+            <div class="security-item">
+              <div class="step-number">1</div>
+              <div>
+                <h4>Click "Send File"</h4>
+                <p>On the home screen, tap the "Send File" button to create a new room.</p>
+              </div>
+            </div>
+            <div class="security-item">
+              <div class="step-number">2</div>
+              <div>
+                <h4>Share Your Room Code</h4>
+                <p>You'll get a unique 6-digit code and QR code. Share this with the receiver via message, or let them scan the QR code.</p>
+              </div>
+            </div>
+            <div class="security-item">
+              <div class="step-number">3</div>
+              <div>
+                <h4>Wait for Connection</h4>
+                <p>Once the receiver joins using your code, you'll see "Connected!" message.</p>
+              </div>
+            </div>
+            <div class="security-item">
+              <div class="step-number">4</div>
+              <div>
+                <h4>Select & Send</h4>
+                <p>Click "Choose Files", select one or multiple files, then hit "Send Files". Transfer starts instantly with real-time progress!</p>
+              </div>
             </div>
           </div>
-          <div class="security-item">
-            <div class="security-icon">✅</div>
-            <div>
-              <h3>Peer-to-Peer Connection</h3>
-              <p>Files transfer directly from sender to receiver. They never touch our servers or any intermediate storage.</p>
+
+          <!-- How to Receive Files -->
+          <div class="modal-section">
+            <h3 class="section-title">📥 Receiving Files (Step-by-Step)</h3>
+            <div class="security-item">
+              <div class="step-number">1</div>
+              <div>
+                <h4>Click "Receive File"</h4>
+                <p>On the home screen, tap "Receive File" to join an existing room.</p>
+              </div>
+            </div>
+            <div class="security-item">
+              <div class="step-number">2</div>
+              <div>
+                <h4>Enter Code or Scan QR</h4>
+                <p>Type the 6-digit code from the sender, OR tap "Scan QR Code" to scan their QR code using your camera.</p>
+              </div>
+            </div>
+            <div class="security-item">
+              <div class="step-number">3</div>
+              <div>
+                <h4>Auto-Download</h4>
+                <p>Once connected and sender selects files, they'll transfer automatically. Files download to your device instantly!</p>
+              </div>
             </div>
           </div>
-          <div class="security-item">
-            <div class="security-icon">✅</div>
-            <div>
-              <h3>No Storage, No Tracking</h3>
-              <p>We don't store, log, or have access to your files. Once transferred, the connection is closed and no data remains.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Why Choose Us Modal -->
+    <div id="why-choose-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>⭐ Why Choose Sroto Share?</h2>
+          <button id="close-why-modal" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-section highlight-section">
+            <div class="security-item">
+              <div class="security-icon">🏦</div>
+              <div>
+                <h4>Banking-Grade Security</h4>
+                <p><strong>WebRTC DTLS-SRTP Encryption</strong> - The same military-grade AES encryption used by banks and financial institutions. Your files are encrypted end-to-end with keys that only your devices know. Even we can't see your files!</p>
+              </div>
+            </div>
+
+            <div class="security-item">
+              <div class="security-icon">🔒</div>
+              <div>
+                <h4>100% Private - Zero Server Storage</h4>
+                <p><strong>Peer-to-Peer Technology</strong> - Files transfer DIRECTLY between devices. Unlike competitors (WeTransfer, Google Drive, Dropbox), your files NEVER touch our servers. No cloud storage = No data breaches possible!</p>
+              </div>
+            </div>
+
+            <div class="security-item">
+              <div class="security-icon">🆓</div>
+              <div>
+                <h4>Completely FREE Forever</h4>
+                <p>No file size limits. No transfer limits. No subscriptions. No ads. No account required. Send 1GB or 100GB - all FREE! Competitors charge $10-20/month for what we offer free.</p>
+              </div>
+            </div>
+
+          
+
+            <div class="security-item">
+              <div class="security-icon">🕵️</div>
+              <div>
+                <h4>Zero Tracking & Logging</h4>
+                <p>We don't track what you send, when you send it, or who you send to. No analytics. No metadata collection. Your privacy is absolute.</p>
+              </div>
+            </div>
+
+            <div class="security-item">
+              <div class="security-icon">📱</div>
+              <div>
+                <h4>Works on Any Device</h4>
+                <p>No app installation needed! Works directly in your browser on iPhone, Android, Windows, Mac, Linux. One solution for all devices.</p>
+              </div>
             </div>
           </div>
-          <div class="security-item">
-            <div class="security-icon">🔑</div>
-            <div>
-              <h3>Private Room Codes</h3>
-              <p>Each transfer uses a unique 6-digit code. Only devices with the correct code can connect.</p>
+
+          <!-- Comparison -->
+          <div class="modal-section">
+            <h3 class="section-title">📊 Sroto Share vs Others</h3>
+            <div class="comparison-table">
+              <div class="comparison-row">
+                <div class="comparison-feature">File Size Limit</div>
+                <div class="comparison-us">✅ Unlimited</div>
+                <div class="comparison-them">❌ 2GB max (free)</div>
+              </div>
+              <div class="comparison-row">
+                <div class="comparison-feature">Privacy</div>
+                <div class="comparison-us">✅ P2P - No servers</div>
+                <div class="comparison-them">❌ Stored on clouds</div>
+              </div>
+              <div class="comparison-row">
+                <div class="comparison-feature">Cost</div>
+                <div class="comparison-us">✅ FREE Forever</div>
+                <div class="comparison-them">❌ $10-20/month</div>
+              </div>
+              <div class="comparison-row">
+                <div class="comparison-feature">Account Required</div>
+                <div class="comparison-us">✅ No signup needed</div>
+                <div class="comparison-them">❌ Login required</div>
+              </div>
             </div>
           </div>
-          <div class="security-item">
-            <div class="security-icon">⚡</div>
-            <div>
-              <h3>Same WiFi = No Internet Required</h3>
-              <p>When on the same network, files transfer locally without using internet bandwidth. Faster and more private.</p>
-            </div>
+
+          <div class="trust-badge">
+            <p>🛡️ <strong>Trusted by thousands</strong> for sensitive document transfers, business files, and personal media. Your security is our priority.</p>
           </div>
         </div>
       </div>
@@ -131,6 +241,13 @@
         <h2>Receive File</h2>
         <p>Get files from another device</p>
       </div>
+
+      <button id="why-choose-btn" class="why-choose-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>
+        <span>Why Choose Sroto Share?</span>
+      </button>
     </div>
 
     <!-- Sender Interface -->
@@ -316,6 +433,10 @@
       </button>
       <button id="receiver-back" class="btn btn-secondary hidden">Start New Transfer</button>
     </div>
+
+    <footer class="footer">
+      <p>© 2025 Sroto Share. All rights reserved.</p>
+    </footer>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>

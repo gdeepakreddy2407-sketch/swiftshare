@@ -388,6 +388,7 @@ header {
   justify-content: center;
   gap: 0.75rem;
   margin-bottom: 0.5rem;
+  margin-left: -3rem;
 }
 
 .logo svg {

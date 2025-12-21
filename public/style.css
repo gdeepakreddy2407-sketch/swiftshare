@@ -49,45 +49,65 @@ body {
 .container {
   max-width: 600px;
   margin: 0 auto;
-  padding: 2rem 1rem;
+  padding: 1rem;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 
+.footer {
+  text-align: center;
+  padding: 0.75rem 0 0.5rem;
+  margin-top: auto;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  flex-shrink: 0;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.footer p {
+  margin: 0;
+}
+
 header {
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: 2.5rem;
   animation: fadeInDown 0.6s ease-out;
   position: relative;
 }
 
-.security-badge {
-  display: inline-flex;
+.info-icon {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-top: 1rem;
-  padding: 0.5rem 1rem;
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  border-radius: 2rem;
-  color: var(--success);
-  font-size: 0.9rem;
-  font-weight: 500;
+  justify-content: center;
+  background: rgba(99, 102, 241, 0.1);
+  border: 2px solid rgba(99, 102, 241, 0.3);
+  border-radius: 50%;
+  color: var(--primary-light);
   cursor: pointer;
   transition: all 0.3s ease;
+  z-index: 100;
+  padding: 0;
 }
 
-.security-badge:hover {
-  background: rgba(16, 185, 129, 0.2);
-  border-color: var(--success);
-  transform: scale(1.05);
+.info-icon:hover {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: var(--primary);
+  transform: scale(1.1);
 }
 
-.security-badge svg {
-  width: 16px;
-  height: 16px;
+.info-icon svg {
+  width: 20px;
+  height: 20px;
 }
 
 .modal {
@@ -165,11 +185,48 @@ header {
   padding: 2rem;
 }
 
+.modal-section {
+  margin-bottom: 2.5rem;
+}
+
+.modal-section:last-child {
+  margin-bottom: 0;
+}
+
+.section-title {
+  font-size: 1.3rem;
+  margin-bottom: 1.5rem;
+  color: var(--primary-light);
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 0.5rem;
+}
+
+.highlight-section {
+  background: rgba(99, 102, 241, 0.05);
+  padding: 1.5rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.step-number {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  color: white;
+}
+
 .security-item {
   display: flex;
   gap: 1.5rem;
-  margin-bottom: 2rem;
-  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding: 1.25rem;
   background: var(--background);
   border-radius: 1rem;
   border: 1px solid var(--border);
@@ -184,15 +241,78 @@ header {
   flex-shrink: 0;
 }
 
-.security-item h3 {
+.security-item h3,
+.security-item h4 {
   margin: 0 0 0.5rem;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   color: var(--text);
 }
 
 .security-item p {
   margin: 0;
   color: var(--text-secondary);
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.security-item strong {
+  color: var(--primary-light);
+  font-weight: 600;
+}
+
+.comparison-table {
+  background: var(--background);
+  border-radius: 1rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.comparison-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+}
+
+.comparison-row:last-child {
+  border-bottom: none;
+}
+
+.comparison-row:hover {
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.comparison-feature {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.comparison-us {
+  color: var(--success);
+  font-weight: 600;
+  text-align: center;
+}
+
+.comparison-them {
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.trust-badge {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(99, 102, 241, 0.1));
+  border-radius: 1rem;
+  border: 2px solid rgba(16, 185, 129, 0.3);
+  text-align: center;
+}
+
+.trust-badge p {
+  margin: 0;
+  color: var(--text);
+  font-size: 1rem;
   line-height: 1.6;
 }
 
@@ -295,10 +415,10 @@ header {
 
 .mode-selection {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
   animation: fadeIn 0.6s ease-out 0.2s both;
-  margin-bottom: 2rem;
+  margin-bottom: 0;
 }
 
 @keyframes fadeIn {
@@ -310,7 +430,7 @@ header {
   background: var(--surface);
   border: 2px solid var(--border);
   border-radius: 1.5rem;
-  padding: 2.5rem 2rem;
+  padding: 1.75rem 1.5rem;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -342,9 +462,9 @@ header {
 
 .mode-icon {
   position: relative;
-  width: 80px;
-  height: 80px;
-  margin: 0 auto 1.5rem;
+  width: 70px;
+  height: 70px;
+  margin: 0 auto 1rem;
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   border-radius: 1.5rem;
   display: flex;
@@ -369,12 +489,44 @@ header {
 }
 
 .mode-card h2 {
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   margin-bottom: 0.5rem;
 }
 
 .mode-card p {
   color: var(--text-secondary);
+}
+
+.why-choose-btn {
+  grid-column: 1 / -1;
+  width: 100%;
+  margin-top: 0;
+  padding: 0.875rem 1.5rem;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(99, 102, 241, 0.15));
+  border: 2px solid rgba(99, 102, 241, 0.3);
+  border-radius: 1rem;
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.why-choose-btn:hover {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(99, 102, 241, 0.25));
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+}
+
+.why-choose-btn svg {
+  width: 24px;
+  height: 24px;
+  color: var(--primary-light);
 }
 
 .interface {
@@ -889,37 +1041,142 @@ header {
 
 @media (max-width: 640px) {
   .container {
-    padding: 1rem;
+    padding: 0.75rem;
+    padding-top: 1rem;
+    justify-content: flex-start;
+  }
+
+  header {
+    margin-bottom: 1.5rem;
+    margin-top: 1rem;
+  }
+
+  .mode-selection {
+    gap: 1rem;
+    grid-template-columns: 1fr;
   }
 
   .logo h1 {
-    font-size: 2rem;
+    font-size: 2.25rem;
+    margin-bottom: 0.25rem;
   }
 
-  .code {
-    font-size: 2rem;
-    letter-spacing: 0.3rem;
-  }
-
-  .card {
-    padding: 1.5rem;
-  }
-
-  .mode-card {
-    padding: 2rem 1.5rem;
-  }
-
-  .transfer-stats {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
-  }
-
-  .connected-status svg {
+  .logo svg {
     width: 50px;
     height: 50px;
   }
 
+  .tagline {
+    font-size: 1rem;
+    margin-top: 0.25rem;
+  }
+
+  .code {
+    font-size: 1.75rem;
+    letter-spacing: 0.25rem;
+    padding: 0.75rem;
+  }
+
+  .card {
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .mode-card {
+    padding: 2rem 1.5rem;
+    margin-bottom: 0;
+  }
+
+  .mode-card h2 {
+    font-size: 1.75rem;
+  }
+
+  .mode-card p {
+    font-size: 1rem;
+  }
+
+  .transfer-stats {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .connected-status svg {
+    width: 40px;
+    height: 40px;
+  }
+
   .connected-status h3 {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
+  }
+
+  .connected-status p {
+    font-size: 0.9rem;
+  }
+
+  .btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9rem;
+  }
+
+  .modal-content {
+    max-height: 85vh;
+  }
+
+  .modal-header {
+    padding: 1.25rem;
+  }
+
+  .modal-body {
+    padding: 1.25rem;
+  }
+
+  .security-item {
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .security-item h3 {
+    font-size: 1rem;
+  }
+
+  .security-item p {
+    font-size: 0.85rem;
+  }
+
+  .info-icon {
+    width: 36px;
+    height: 36px;
+    top: 0.75rem;
+    right: 0.75rem;
+  }
+
+  .info-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .footer {
+    padding: 0.5rem 0;
+    margin-top: 0.5rem;
+    font-size: 0.7rem;
+  }
+
+  .mode-card {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .mode-card h2 {
+    font-size: 1.35rem;
+  }
+
+  .why-choose-btn {
+    margin-top: 0;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.85rem;
+  }
+
+  .why-choose-btn svg {
+    width: 20px;
+    height: 20px;
   }
 }

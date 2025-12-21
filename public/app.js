@@ -33,12 +33,38 @@ let isInFilePicker = false;
 let heartbeatInterval = null;
 let reconnectionTimeout = null;
 let intentionalDisconnect = false; // Track user-initiated disconnects
+let localIP = null; // Track local IP address
+let peerIP = null; // Track peer's IP address
 
 // File streaming support (Chrome/Edge only)
 let supportsFileSystemAccess = 'showSaveFilePicker' in window;
 let streamingWritable = null;
 let streamingFileHandle = null;
 let useStreaming = false;
+
+// Extract local IP from ICE candidate
+function extractLocalIP(candidate) {
+  if (!candidate) return null;
+  const parts = candidate.candidate.split(' ');
+  if (parts.length > 4 && parts[7] === 'host') {
+    const ip = parts[4];
+    // Only return local network IPs (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+    if (ip.startsWith('192.168.') || ip.startsWith('10.') || 
+        (ip.startsWith('172.') && parseInt(ip.split('.')[1]) >= 16 && parseInt(ip.split('.')[1]) <= 31)) {
+      return ip;
+    }
+  }
+  return null;
+}
+
+// Check if two IPs are on same subnet
+function isSameNetwork(ip1, ip2) {
+  if (!ip1 || !ip2) return false;
+  const parts1 = ip1.split('.');
+  const parts2 = ip2.split('.');
+  // Same /24 subnet (first 3 octets match)
+  return parts1[0] === parts2[0] && parts1[1] === parts2[1] && parts1[2] === parts2[2];
+}
 
 // Handle page visibility changes (mobile file picker)
 document.addEventListener('visibilitychange', () => {
@@ -225,6 +251,10 @@ function reset() {
   // Reset transfer flags
   isTransferring = false;
   transferCancelled = false;
+  
+  // Reset IP tracking
+  localIP = null;
+  peerIP = null;
   
   // Force garbage collection hint (only works if --expose-gc flag is set)
   // This doesn't actually force GC but hints to the browser
@@ -423,6 +453,15 @@ async function setupSenderPeerConnection() {
   // ICE candidates
   peerConnection.onicecandidate = (event) => {
     if (event.candidate) {
+      // Extract local IP from first host candidate
+      if (!localIP) {
+        const ip = extractLocalIP(event.candidate);
+        if (ip) {
+          localIP = ip;
+          console.log('Sender local IP:', localIP);
+          socket.emit('local-ip', roomCode, localIP);
+        }
+      }
       socket.emit('ice-candidate', roomCode, event.candidate);
     }
   };
@@ -825,11 +864,18 @@ async function setupReceiverPeerConnection() {
   // ICE candidates
   peerConnection.onicecandidate = (event) => {
     if (event.candidate) {
+      // Extract local IP from first host candidate
+      if (!localIP) {
+        const ip = extractLocalIP(event.candidate);
+        if (ip) {
+          localIP = ip;
+          console.log('Receiver local IP:', localIP);
+          socket.emit('local-ip', roomCode, localIP);
+        }
+      }
       socket.emit('ice-candidate', roomCode, event.candidate);
     }
   };
-  
-  // Data channel
   peerConnection.ondatachannel = (event) => {
     dataChannel = event.channel;
     setupReceiverDataChannel();
@@ -1227,6 +1273,38 @@ socket.on('offer', async (offer) => {
 
 socket.on('answer', async (answer) => {
   await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+});
+
+// Handle peer's local IP
+socket.on('local-ip', (ip) => {
+  peerIP = ip;
+  console.log('Peer IP received:', peerIP);
+  
+  // Check if on same network
+  if (localIP && peerIP && !isSameNetwork(localIP, peerIP)) {
+    console.error('Different networks detected!', { localIP, peerIP });
+    showNotification('Error: Devices must be on the same WiFi network', 'error');
+    
+    // Show detailed error modal
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #ff3b30; color: white; padding: 30px; border-radius: 12px; z-index: 10000; max-width: 400px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+    errorDiv.innerHTML = `
+      <h2 style="margin: 0 0 15px 0; font-size: 20px;">⚠️ Different Networks</h2>
+      <p style="margin: 0 0 10px 0; font-size: 14px;">Your device: <strong>${localIP}</strong></p>
+      <p style="margin: 0 0 20px 0; font-size: 14px;">Other device: <strong>${peerIP}</strong></p>
+      <p style="margin: 0 0 20px 0; font-size: 14px;">Both devices must be on the same WiFi network for direct transfer.</p>
+      <button onclick="location.reload()" style="background: white; color: #ff3b30; border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">Go Back</button>
+    `;
+    document.body.appendChild(errorDiv);
+    
+    // Disconnect after showing error
+    setTimeout(() => {
+      if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+      }
+    }, 500);
+  }
 });
 
 socket.on('ice-candidate', async (candidate) => {
